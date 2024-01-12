@@ -1,9 +1,10 @@
 import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
+import { provideToastr } from 'ngx-toastr';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 /*
 import { getMessaging, getToken, provideMessaging } from '@angular/fire/messaging';
@@ -42,6 +43,10 @@ export const appConfig: ApplicationConfig = {
   }),
 
   provideHttpClient(),
+
+  provideToastr(),
+
+  provideAnimations() // Requerido por Toastr
 
   ]
 };

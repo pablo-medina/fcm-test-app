@@ -2,10 +2,10 @@ import { ApplicationConfig, Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { environment } from '../environments/environment';
+import { MessagePayload, getMessaging, getToken, onMessage } from "firebase/messaging";
 import { MessagingService } from './services/messaging.service';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +19,7 @@ export class AppComponent implements OnDestroy {
   serviceWorkerReady$ = new BehaviorSubject<boolean>(false);
   private ngDestroy$ = new Subject<void>();
 
-  constructor(messagingService: MessagingService) {
+  constructor(messagingService: MessagingService, private toastr: ToastrService) {
 
     messagingService.getFirebaseConfig()
       .subscribe(
@@ -38,6 +38,10 @@ export class AppComponent implements OnDestroy {
                   console.debug('Service worker listo... Inicializando Firebase...');
                   const fapp = initializeApp(firebaseConfig);
                   const messaging = getMessaging(fapp);
+                  onMessage(messaging, payload => {
+                    console.log('MENSAJE RECIBIDO:', payload);
+                    this.showToast(payload);
+                  })
 
                   // NOTA: Necesito obtener el swRegistration y pasárselo al getToken para que no falle en el primer uso
                   navigator.serviceWorker.register('/firebase-messaging-sw.js')
@@ -57,6 +61,18 @@ export class AppComponent implements OnDestroy {
           }
         }
       );
+  }
+
+  private showToast(payload: MessagePayload): void {
+    const title = payload.notification?.title;
+    const body = payload.notification?.body;
+    const imageUrl = payload.notification?.image;
+
+    this.toastr.info(
+      `<div class="fcm-message"><div class="fcm-image-container"><img src="${imageUrl}" alt="${title}"></img></div><div class="fcm-message-content">${body}</div></div>`,
+      title,
+      { enableHtml: true, closeButton: true, timeOut: 5000 }
+    );
   }
 
   ngOnDestroy(): void {
