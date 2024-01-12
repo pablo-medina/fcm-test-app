@@ -1,5 +1,6 @@
 import { ApplicationConfig, importProvidersFrom, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 
 import { routes } from './app.routes';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -12,32 +13,34 @@ import { FirebaseAppModule, getApp, initializeApp, provideFirebaseApp } from '@a
 let current_token = '';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), 
-    /*
-    importProvidersFrom(provideFirebaseApp(
-      () => initializeApp(),
-      () => getToken(getMessaging(initializeApp(firebaseConfig)), {vapidKey: ""})
-        .then(token => {
-          console.log('TOKEN:', token);
-          current_token = token; 
-        })
-    )),
-    importProvidersFrom(provideMessaging(
-      () => getMessaging()
-    )),
-    */
-        
-    provideServiceWorker('ngsw-worker.js', {
-        //enabled: !isDevMode(),
-        enabled: true,
-        registrationStrategy: 'registerWhenStable:30000'
-    }),
-  
-    provideServiceWorker('firebase-messaging-sw.js', {
-      //enabled: !isDevMode(),
-      enabled: true,
-      registrationStrategy: 'registerWhenStable:30000'
-  })
+  providers: [provideRouter(routes),
+  /*
+  importProvidersFrom(provideFirebaseApp(
+    () => initializeApp(),
+    () => getToken(getMessaging(initializeApp(firebaseConfig)), {vapidKey: ""})
+      .then(token => {
+        console.log('TOKEN:', token);
+        current_token = token; 
+      })
+  )),
+  importProvidersFrom(provideMessaging(
+    () => getMessaging()
+  )),
+  */
+
+  provideServiceWorker('ngsw-worker.js', {
+    //enabled: !isDevMode(),
+    enabled: true,
+    registrationStrategy: 'registerWhenStable:30000'
+  }),
+
+  provideServiceWorker('firebase-messaging-sw.js', {
+    //enabled: !isDevMode(),
+    enabled: true,
+    registrationStrategy: 'registerWhenStable:30000'
+  }),
+
+  provideHttpClient()
   ]
 };
 

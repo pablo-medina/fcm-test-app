@@ -1,32 +1,38 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-const firebaseConfig = {
-    // TODO: Copiar de environment.ts - firebaseConfig    
-};
+const CONFIG_API_URL = 'http://localhost:10001/firebase-config';
 
-if (!firebaseConfig.apiKey) {
-    throw new Error('Firebase no configurado. Revisar configuración en firebase-messasing-sw.js');
+const requestOptions = {
+    method: 'GET',
+    headers: {
+        'Content-Type': 'application/json',
+        'application': 'fcm-test-client'
+    }
 }
 
-firebase.initializeApp(firebaseConfig);
+fetch(CONFIG_API_URL, requestOptions)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} - ${response.statusText}`)
+        }
+        return response.json();
+    })
+    .then(firebaseConfig => {
+        console.debug('Configuración de firebase: [SW]', firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
 
-const messaging = firebase.messaging();
+        const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function (payload) {
-    console.log("Received background message ", payload);
+        messaging.onBackgroundMessage(function (payload) {
+            console.log("Mensaje recibido: ", payload);
 
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body
-    };
+            const notificationTitle = payload.notification.title;
+            const notificationOptions = {
+                body: payload.notification.body
+            };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
+            self.registration.showNotification(notificationTitle, notificationOptions);
+        });
 
-/*
-fetch('https://jsonplaceholder.typicode.com/todos/1')
-      .then(response => response.json())
-      .then(json => console.log(json));
-*/
-    
+    });

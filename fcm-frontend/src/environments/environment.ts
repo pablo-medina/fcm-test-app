@@ -1,5 +1,4 @@
 export const environment = {
-    firebaseConfig: {
-        // TODO: Agregar la configuración de firebase
-    }
+    apiUrl: 'http://localhost:10001',
+    appId: 'fcm-test-client'
 }
