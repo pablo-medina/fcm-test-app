@@ -37,10 +37,12 @@ export const appConfig: ApplicationConfig = {
   provideServiceWorker('firebase-messaging-sw.js', {
     //enabled: !isDevMode(),
     enabled: true,
-    registrationStrategy: 'registerWhenStable:30000'
+    //registrationStrategy: 'registerImmediately'
+    registrationStrategy: 'registerWhenStable:5000'
   }),
 
   provideHttpClient(),
+
   ]
 };
 

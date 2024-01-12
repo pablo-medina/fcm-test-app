@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Observable, of, tap } from 'rxjs';
+import { BehaviorSubject, interval, Observable, Subscription, of, tap, fromEvent } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Injectable({
@@ -9,8 +9,37 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 export class MessagingService {
   private channel = new BroadcastChannel('app-channel');
   private config: any;
+  serviceWorkerReady$ = new BehaviorSubject<boolean>(false);
+
+  private intervalSubscription: Subscription | undefined;
 
   constructor(private http: HttpClient) {
+    if (navigator.serviceWorker) {      
+      this.startPolling();
+    }
+  }
+
+  private startPolling() {
+    this.intervalSubscription = interval(1000).subscribe(() => {
+      console.debug('Consultando estado al service worker...');
+      this.channel.postMessage({ action: 'status_request' });
+    });
+
+    this.channel.addEventListener('message', (event) => {
+      const data = event.data;
+      if (data.action === 'status' && data.ready === true) {
+        this.stopPolling();
+        console.log('Service Worker listo.');
+        this.serviceWorkerReady$.next(true);
+      }
+    })
+  }
+
+  private stopPolling() {
+    if (this.intervalSubscription) {
+      this.intervalSubscription.unsubscribe();
+      this.intervalSubscription = undefined;
+    }
   }
 
   getFirebaseConfig(): Observable<any> {
