@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Observable, of } from 'rxjs';
+import { Observable, of, tap } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MessagingService {
+  private channel = new BroadcastChannel('app-channel');
   private config: any;
 
   constructor(private http: HttpClient) {
@@ -24,7 +25,18 @@ export class MessagingService {
         }
       );
 
-      return this.http.get(configApiUrl, { headers });
+      return this.http.get(configApiUrl, { headers })
+        .pipe(
+          tap(firebaseConfig => {
+            this.channel.addEventListener('message', (event) => {
+              const message = event.data;
+
+              if (message.action === 'get-firebase-config') {
+                this.channel.postMessage({ action: 'firebase-config', value: firebaseConfig })
+              }
+            })
+          })
+        )
     }
   }
 }

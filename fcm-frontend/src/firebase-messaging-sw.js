@@ -1,38 +1,33 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-const CONFIG_API_URL = 'http://localhost:10001/firebase-config';
+self.addEventListener('activate', (event) => {
+    console.log('Activando SW...');
+    const channel = new BroadcastChannel('app-channel');
+    channel.postMessage({action: 'get-firebase-config'});
 
-const requestOptions = {
-    method: 'GET',
-    headers: {
-        'Content-Type': 'application/json',
-        'application': 'fcm-test-client'
-    }
-}
-
-fetch(CONFIG_API_URL, requestOptions)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status} - ${response.statusText}`)
+    channel.addEventListener('message', (event) => {
+        const message = event.data;
+        if (message.action === 'firebase-config') {
+            const firebaseConfig = message.value;
+            console.debug('Configuración de firebase: [SW]', firebaseConfig);            
+            firebase.initializeApp(firebaseConfig);
+    
+            const messaging = firebase.messaging();
+    
+            messaging.onBackgroundMessage(function (payload) {
+                console.log("Mensaje recibido: ", payload);
+    
+                const notificationTitle = payload.notification.title;
+                const notificationOptions = {
+                    body: payload.notification.body
+                };
+    
+                self.registration.showNotification(notificationTitle, notificationOptions);
+            });            
         }
-        return response.json();
+
+        // Indica que el Service Worker está activo
+        return self.clients.claim();
     })
-    .then(firebaseConfig => {
-        console.debug('Configuración de firebase: [SW]', firebaseConfig);
-        firebase.initializeApp(firebaseConfig);
-
-        const messaging = firebase.messaging();
-
-        messaging.onBackgroundMessage(function (payload) {
-            console.log("Mensaje recibido: ", payload);
-
-            const notificationTitle = payload.notification.title;
-            const notificationOptions = {
-                body: payload.notification.body
-            };
-
-            self.registration.showNotification(notificationTitle, notificationOptions);
-        });
-
-    });
+});
