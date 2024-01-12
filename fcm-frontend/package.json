@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "dev": "nodemon -watch src --ignore dist -e js,json,ts,html,scss --exec \"npm run prod\"",
     "prod": "ng build && http-server dist/fcm-frontend/browser -c-1 -p 10000"
   },
   "private": true,
@@ -37,6 +38,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "nodemon": "^3.0.2",
     "typescript": "~5.2.2"
   }
 }
