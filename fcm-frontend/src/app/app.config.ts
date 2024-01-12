@@ -40,7 +40,7 @@ export const appConfig: ApplicationConfig = {
     registrationStrategy: 'registerWhenStable:30000'
   }),
 
-  provideHttpClient()
+  provideHttpClient(),
   ]
 };
 

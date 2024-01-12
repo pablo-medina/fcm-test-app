@@ -1,8 +1,13 @@
 # Frontend
 
 ## Configuración
-- Modificar la propiedad "firebaseConfig" de environment.ts para que tenga la configuración provista por la Consola de Firebase.
-- Hacer lo mismo con la constante "firebaseConfig" del service worker "firebase-messaging-sw.js"
+Modificar el archivo environment.ts para que sea consistente con la configuración de backend.
+
+### Configuración en environment.ts
+|Variable|Descripción
+|-|-
+|apiUrl|Ubicación de la URL base del backend (por ejemplo: http://localhost:10001)
+|appId|ID de aplicación enviada al backend. Debe coincidir con el ID esperado por el mismo. Revisar la documentación del mismo para más información.
 
 ## Ejecución
 Usar ```yarn prod``` para levantar la aplicación sobre un servidor ***http-server***.
