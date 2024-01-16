@@ -40,7 +40,7 @@ app.post('/send-message', validateApplicationHeader, (req, res) => {
             notification: {
                 title: titulo || '',
                 body: texto || '',
-                image: undefined // Lo dejo de referencia para saber que aqui se envian las URLs con las imágenes
+                image: imagen // Lo dejo de referencia para saber que aqui se envian las URLs con las imágenes
             },
             token
         }        
