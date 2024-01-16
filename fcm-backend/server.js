@@ -35,6 +35,7 @@ app.get('/firebase-config', validateApplicationHeader, (req, res) => {
 
 app.post('/send-message', validateApplicationHeader, (req, res) => {
     const { titulo, texto, imagen, token } = req.body;
+    console.log('send-message: ', JSON.stringify(req.body));
     try {
         const message = {
             notification: {
@@ -43,12 +44,12 @@ app.post('/send-message', validateApplicationHeader, (req, res) => {
                 image: imagen // Lo dejo de referencia para saber que aqui se envian las URLs con las imágenes
             },
             token
-        }        
+        }
 
         admin.messaging().send(message)
             .then(response => {
                 console.log('Mensaje enviado:', response);
-                res.send('Mensaje enviado a FCM');
+                res.status(200).send({ success: true, mensaje: 'Mensaje enviado a FCM' });
             })
             .catch(error => {
                 console.error('Error al enviar el mensaje:', error);
@@ -56,6 +57,7 @@ app.post('/send-message', validateApplicationHeader, (req, res) => {
             });
     } catch (error) {
         console.error('Error al intentar enviar un mensaje', error);
+        res.status(500).send('Error al enviar mensaje a FCM');
     }
 })
 
