@@ -7,7 +7,7 @@ import { MessagingService } from './services/messaging.service';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { SpinnerComponent } from './components/spinner/spinner.component';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
@@ -25,18 +25,15 @@ export class AppComponent implements OnDestroy {
 
   token: string = '';
 
-  frmEnviarMensaje: FormGroup;
+  frmEnviarMensaje = new FormGroup(
+    {
+      titulo: new FormControl<string | null>('Título'),
+      texto: new FormControl<string>('Mensaje de prueba', { validators: Validators.required }),
+      imagen: new FormControl<string | null>('https://picsum.photos/200')
+    }
+  );
 
-  constructor(private messagingService: MessagingService, private toastr: ToastrService, private formBuilder: FormBuilder) {
-
-    this.frmEnviarMensaje = this.formBuilder.group(
-      {
-        titulo: ['Título'],
-        texto: ['Mensaje de prueba'],
-        imagen: ['https://picsum.photos/200']
-      }
-    )
-
+  constructor(private messagingService: MessagingService, private toastr: ToastrService) {
     messagingService.getFirebaseConfig()
       .subscribe(
         {
