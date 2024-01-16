@@ -13,9 +13,9 @@ self.addEventListener('activate', (event) => {
         if (message.action === 'firebase-config') {
             const firebaseConfig = message.value;
             console.debug('Configuración de firebase: [SW]', firebaseConfig);
-            firebase.initializeApp(firebaseConfig);
+            firebase.initializeApp(firebaseConfig);                        
 
-            const messaging = firebase.messaging();
+            const messaging = firebase.messaging();                                    
 
             messaging.onBackgroundMessage(function (payload) {
                 console.log("Mensaje recibido: ", payload);
@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
                 const notificationTitle = payload.notification.title;
                 const notificationOptions = {
                     body: payload.notification.body
-                };
+                };                
 
                 self.registration.showNotification(notificationTitle, notificationOptions);
             });

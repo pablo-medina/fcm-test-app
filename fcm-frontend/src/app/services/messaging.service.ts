@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { BehaviorSubject, interval, Observable, Subscription, of, tap, fromEvent } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { IMensaje } from '../models/mensaje.model';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,7 @@ export class MessagingService {
   private intervalSubscription: Subscription | undefined;
 
   constructor(private http: HttpClient) {
-    if (navigator.serviceWorker) {      
+    if (navigator.serviceWorker) {
       this.startPolling();
     }
   }
@@ -65,7 +66,33 @@ export class MessagingService {
               }
             })
           })
-        )
+        );
     }
   }
+
+  enviarMensaje(mensaje: IMensaje): Observable<any> {
+    const sendMessageUrl = `${environment.apiUrl}/send-message`;
+    const headers = new HttpHeaders(
+      {
+        'Content-Type': 'application/json',
+        'application': environment.appId
+      }
+    );
+
+    console.debug('enviarMensaje:', mensaje);
+
+    console.log('URL', sendMessageUrl, 'body:', mensaje, 'headers:', headers);
+
+    return this.http.post(sendMessageUrl, mensaje, { headers })
+      .pipe(
+        tap(response => {
+          console.debug('Mensaje recibido:', response);
+        })
+      );
+  }
+
+  public isServiceWorkerEnabled(): boolean {
+    return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
+  }
+
 }

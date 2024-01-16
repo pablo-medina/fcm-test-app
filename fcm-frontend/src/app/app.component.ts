@@ -1,4 +1,4 @@
-import { ApplicationConfig, Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { initializeApp } from 'firebase/app';
@@ -6,11 +6,13 @@ import { MessagePayload, getMessaging, getToken, onMessage } from "firebase/mess
 import { MessagingService } from './services/messaging.service';
 import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { SpinnerComponent } from './components/spinner/spinner.component';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet],
+  imports: [CommonModule, RouterOutlet, SpinnerComponent, ReactiveFormsModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -18,14 +20,29 @@ export class AppComponent implements OnDestroy {
   title = 'fcm-frontend';
   serviceWorkerReady$ = new BehaviorSubject<boolean>(false);
   private ngDestroy$ = new Subject<void>();
+  loading = false;
+  notSupported = false;
 
-  constructor(messagingService: MessagingService, private toastr: ToastrService) {
+  token: string = '';
+
+  frmEnviarMensaje: FormGroup;
+
+  constructor(private messagingService: MessagingService, private toastr: ToastrService, private formBuilder: FormBuilder) {
+
+    this.frmEnviarMensaje = this.formBuilder.group(
+      {
+        titulo: ['Título'],
+        texto: ['Mensaje de prueba'],
+        imagen: ['https://picsum.photos/200']
+      }
+    )
 
     messagingService.getFirebaseConfig()
       .subscribe(
         {
           next: firebaseConfig => {
             console.debug('Configuración de Firebase: [APP]', firebaseConfig);
+            this.loading = true;
 
             messagingService.serviceWorkerReady$
               .pipe(
@@ -38,6 +55,9 @@ export class AppComponent implements OnDestroy {
                   console.debug('Service worker listo... Inicializando Firebase...');
                   const fapp = initializeApp(firebaseConfig);
                   const messaging = getMessaging(fapp);
+
+                  this.loading = false;
+
                   onMessage(messaging, payload => {
                     console.log('MENSAJE RECIBIDO:', payload);
                     this.showToast(payload);
@@ -50,6 +70,7 @@ export class AppComponent implements OnDestroy {
                       //TODO: Agregar la vapidKey
                       getToken(messaging, { serviceWorkerRegistration: swRegistration }).then(token => {
                         console.log('El token es: ', token);
+                        this.token = token;
                       });
                     });
                 }
@@ -68,11 +89,41 @@ export class AppComponent implements OnDestroy {
     const body = payload.notification?.body;
     const imageUrl = payload.notification?.image;
 
-    this.toastr.info(
-      `<div class="fcm-message"><div class="fcm-image-container"><img src="${imageUrl}" alt="${title}"></img></div><div class="fcm-message-content">${body}</div></div>`,
-      title,
-      { enableHtml: true, closeButton: true, timeOut: 5000 }
-    );
+    if (imageUrl) {
+      this.toastr.info(
+        `<div class="fcm-message"><div class="fcm-image-container"><img src="${imageUrl}" alt="${title}"></img></div><div class="fcm-message-content">${body}</div></div>`,
+        title,
+        { enableHtml: true, closeButton: true, timeOut: 5000 }
+      );
+    } else {
+      this.toastr.info(
+        `<div class="fcm-message"><div class="fcm-image-container"></div><div class="fcm-message-content">${body}</div></div>`,
+        title,
+        { enableHtml: true, closeButton: true, timeOut: 5000 }
+      );
+    }
+  }
+
+  enviarMensaje(): void {
+    const formValue = this.frmEnviarMensaje.value;
+
+    this.messagingService.enviarMensaje(
+      {
+        token: this.token,
+        titulo: formValue.titulo || '',
+        texto: formValue.texto || '',
+        imagen: formValue.imagen || ''
+      }
+    ).subscribe(
+      {
+        next: response => {
+          console.log('Respuesta:', response);
+        },
+        error: err => {
+          console.error(err);
+        }
+      }
+    )
   }
 
   ngOnDestroy(): void {
