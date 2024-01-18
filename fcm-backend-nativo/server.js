@@ -19,7 +19,7 @@ const validateApplicationHeader = (req, res, next) => {
 
 async function main() {
     console.log('Cargando configuración...');
-    const fcmClient = new FCMClient(SERVICE_ACCOUNT_KEY_FILENAME);
+    const fcmClient = new FCMClient(SERVICE_ACCOUNT_KEY_FILENAME);    
     await fcmClient.inicializar();
 
     console.log('Inicialiando servidor...');
@@ -73,13 +73,13 @@ async function main() {
 
     // Iniciar el servidor
     app.listen(FCM_API_PORT, () => {
-        console.log(`Servidor Express corriendo en http://localhost:${FCM_API_PORT}`);
+        console.log(`Servidor FCM-TEST-APP corriendo en http://localhost:${FCM_API_PORT}`);
     });
 }
 
 main().then(
     status => {
-        console.log('Finalizado: ', status);
+        console.log('Servidor inicializado.', status);
     }
 ).catch(err => {
     console.error(err);

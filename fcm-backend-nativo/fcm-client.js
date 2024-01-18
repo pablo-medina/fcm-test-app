@@ -15,7 +15,6 @@ import fetch from 'node-fetch';
 import { readFileSync } from 'fs';
 
 const PROXY_ENV_VAR = 'HTTP_PROXY';
-const SERVICE_ACCOUNT_KEY_FILENAME = './serviceAccountKey.json';
 
 const getProxyAgent = () => {
     // Inicializar proxy-agent en caso de ser necesario
@@ -29,42 +28,27 @@ const getProxyAgent = () => {
     }
 }
 
-const getAuthToken = async () => {
-    // Obtener autenticación OAuth2 para usar FCM
-    const auth = new GoogleAuth({
-        keyFile: SERVICE_ACCOUNT_KEY_FILENAME,
-        scopes: ['https://www.googleapis.com/auth/firebase.messaging']
-    });
-
-    try {
-        // Obtiene el token de acceso
-        const client = await auth.getClient();
-        const token = await client.getAccessToken();
-        return token.token;
-    } catch (error) {
-        throw new Error('Error al autenticar:', error.message);
-    }
-}
-
 class FCMClient {
-    _serviceAccountKey = undefined;
-    _proxyAgent = undefined;
-    _authToken = undefined;
+    #serviceAccountKey = undefined;
+    #serviceAccountKeyPath = undefined;
+    #proxyAgent = undefined;
+    #authToken = undefined;
 
     constructor(serviceAccountKeyPath) {
-        this._serviceAccountKey = JSON.parse(readFileSync(serviceAccountKeyPath));
+        this.#serviceAccountKeyPath = serviceAccountKeyPath;
+        this.#serviceAccountKey = JSON.parse(readFileSync(serviceAccountKeyPath));
     }
 
     async inicializar() {
-        this._proxyAgent = getProxyAgent();
-        this._authToken = await getAuthToken();
+        this.#proxyAgent = getProxyAgent();
+        this.#authToken = await this.#getAuthToken();
     }
 
     async enviarMensaje({ token, titulo, mensaje, imagen }) {
-        if (!this._serviceAccountKey) {
+        if (!this.#serviceAccountKey) {
             throw new Error('Service Account Key no inicializada correctamente.');
         }
-        const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this._serviceAccountKey.project_id}/messages:send`;
+        const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this.#serviceAccountKey.project_id}/messages:send`;
 
         // Crea el mensaje de la notificación    
         const payload = {
@@ -83,13 +67,30 @@ class FCMClient {
             method: 'POST',
             body: JSON.stringify(payload),
             headers: {
-                Authorization: `Bearer ${this._authToken}`
+                Authorization: `Bearer ${this.#authToken}`
             },
-            agent: this._proxyAgent
+            agent: this.#proxyAgent
         });
         const data = await response.json();
         console.debug('Respuesta:', data);
         return data;
+    }
+
+    async #getAuthToken() {
+        // Obtener autenticación OAuth2 para usar FCM
+        const auth = new GoogleAuth({
+            keyFile: this.#serviceAccountKeyPath,
+            scopes: ['https://www.googleapis.com/auth/firebase.messaging']
+        });
+
+        try {
+            // Obtiene el token de acceso
+            const client = await auth.getClient();
+            const token = await client.getAccessToken();
+            return token.token;
+        } catch (error) {
+            throw new Error('Error al autenticar:', error.message);
+        }
     }
 }
 
