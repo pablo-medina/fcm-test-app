@@ -132,3 +132,4 @@ dist
 # Firebase configuration
 firebase.config.json
 serviceAccountKey.json
+vapidKey.json

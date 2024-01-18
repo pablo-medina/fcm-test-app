@@ -4,7 +4,8 @@ const ServerConfig = {
         apiPort: process.env.FCM_API_PORT || 10001
     },
     clientConfigPath: 'firebase.config.json',
-    serviceAccountKeyPath: './serviceAccountKey.json'
+    serviceAccountKeyPath: 'serviceAccountKey.json',
+    vapidKeyPath: 'vapidKey.json'
 }
 
 export default ServerConfig;

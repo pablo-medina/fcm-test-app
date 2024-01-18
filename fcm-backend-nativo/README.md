@@ -24,7 +24,7 @@ El objetivo de esta versión es ofrecer una alternativa en aquellos entornos en 
 ```
 
 ### serviceAccountKey
-* Crear el archivo ***serviceAccountKey.json*** y agregarle la información de Cuenta de Servicio provista desde la consolde de Firebase. En caso de no tener una, utilizar la opción "Generar nueva clave privada" dentro de la consola. El archivo que descarga es la *serviceAccountKey*.
+* Crear el archivo ***serviceAccountKey.json*** y agregarle la información de Cuenta de Servicio provista desde la consola de Firebase. En caso de no tener una, utilizar la opción "Generar nueva clave privada" dentro de la consola. El archivo que descarga es la *serviceAccountKey*.
 
 #### Formato
 
@@ -44,16 +44,37 @@ El objetivo de esta versión es ofrecer una alternativa en aquellos entornos en 
 }
 ```
 
+### vapidKey
+* Crear el archivo ***vapidKey.json*** y agregarle la información de la clave VAPID provista desde la consola de Firebase (Cloud Messasing / Certificados Push Web).
+
+#### Formato
+
+```json
+{
+  "vapidKey": ""
+}
+```
+
 ### Configuración de Proxy
 Para habilitar el proxy, solo es necesario definir la variable de entorno *HTTP_PROXY* de la siguiente manera:
 
+#### Con usuario/password (en caso de ser necesario)
 ```
-HTTP_PROXY=http://<usuario>:<password>@<url_proxy>:<puerto_proxy>.
+FCM_PROXY=http://<usuario>:<password>@<url_proxy>:<puerto_proxy>.
+```
+Ejemplo:
+```
+FCM_PROXY=http://pmedina:123456@proxy.dominioempresa.com:8080
+```
+
+#### Sin usuario/password
+```
+FCM_PROXY=http://proxy.<url_proxy>:<puerto>.
 ```
 
 Ejemplo:
 ```
-HTTP_PROXY=http://pmedina:123456@proxy.midominio.com:8080
+FCM_PROXY=http://proxy.dominioempresa.com:8080
 ```
 
 ### Variables de entorno

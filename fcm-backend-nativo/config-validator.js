@@ -22,6 +22,10 @@ const validateOrExit = () => {
         errors.push(`No se pudo abrir el archivo de configuración de clave de Cuenta de Servicio de Firebase (${chalk.yellowBright(ServerConfig.serviceAccountKeyPath)}).`);
     }
 
+    if (!fileExists(ServerConfig.vapidKeyPath)) {
+        errors.push(`No se pudo abrir el archivo de configuración de clave VAPID (${chalk.yellowBright(ServerConfig.vapidKeyPath)}).`);
+    }
+
     if (errors.length > 0) {
         errors.forEach(error => { console.error(chalk.redBright(error)) });
         console.log(chalk.whiteBright('Verifique que los archivos estén incluidos tal como se describe en la documentación e intente nuevamente.'));
