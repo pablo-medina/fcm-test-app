@@ -7,7 +7,42 @@ La primer dependencia es para poder realizar la autenticación OAuth2 (que pasa 
 El objetivo de esta versión es ofrecer una alternativa en aquellos entornos en los que, por restricciones de proxy, la versión con Firebase-Admin no pueda realizar la autenticación OAuth2 incluso aunque se especifique un HTTP Agent.
 
 ## Configuración
-Crear el archivo ***firebase.config.json*** en la carpeta raíz del proyecto y agregarle la configuración provista por la consola de Firebase.
+### API Key y datos de cliente
+* Crear el archivo ***firebase.config.json*** en la carpeta raíz del proyecto y agregarle la configuración provista por la consola de Firebase.
+
+#### Formato
+
+```json
+{
+    "apiKey": "",
+    "authDomain": "",
+    "projectId": "",
+    "storageBucket": "",
+    "messagingSenderId": "",
+    "appId": ""
+}
+```
+
+### serviceAccountKey
+* Crear el archivo ***serviceAccountKey.json*** y agregarle la información de Cuenta de Servicio provista desde la consolde de Firebase. En caso de no tener una, utilizar la opción "Generar nueva clave privada" dentro de la consola. El archivo que descarga es la *serviceAccountKey*.
+
+#### Formato
+
+```json
+{
+  "type": "",
+  "project_id": "",
+  "private_key_id": "",
+  "private_key": "",
+  "client_email": "",
+  "client_id": "",
+  "auth_uri": "",
+  "token_uri": "",
+  "auth_provider_x509_cert_url": "",
+  "client_x509_cert_url": "",
+  "universe_domain": ""
+}
+```
 
 ### Configuración de Proxy
 Para habilitar el proxy, solo es necesario definir la variable de entorno *HTTP_PROXY* de la siguiente manera:
@@ -33,6 +68,29 @@ HTTP_PROXY=http://pmedina:123456@proxy.midominio.com:8080
 ### GET /firebase-config
 Devuelve la configuración de firebase provista en el archivo firebase.config.json.
 NOTA: Para que este endpoint responda correctamente, el archivo tiene que existir, tener una configuración JSON válida y además, el header 'application' del request debe contener el ID de aplicación indicado en FCM_APP_ID.
+
+### POST /send-message
+Envía el mensaje indicado a FCM.
+
+#### Payload
+
+```json
+{
+    "token": "",
+    "titulo": "",
+    "texto": "",
+    "imagen": ""
+}
+```
+
+#### Descripción de atributos del Payload
+
+| Atributo | Tipo   | Descripción                                 |
+| -------- | ------ | ------------------------------------------- |
+| token    | string | Token FCM obtenido por el frontend          |
+| titulo   | string | Título del mensaje                          |
+| texto    | string | Contenido prinicpal del mensaje             |
+| imagen   | string | URL a una imagen para incluir en el mensaje |
 
 ## Scripts
 

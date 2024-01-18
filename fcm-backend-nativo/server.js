@@ -46,15 +46,6 @@ async function main() {
         const { titulo, texto, imagen, token } = req.body;
         console.log('send-message: ', JSON.stringify(req.body));
         try {
-            const message = {
-                notification: {
-                    title: titulo || '',
-                    body: texto || '',
-                    image: imagen // Lo dejo de referencia para saber que aqui se envian las URLs con las imágenes
-                },
-                token
-            }
-
             fcmClient.enviarMensaje({ token, titulo, mensaje: texto, imagen })
                 .then(response => {
                     console.log('Mensaje enviado:', response);
