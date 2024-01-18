@@ -9,6 +9,14 @@ import ServerConfig from './config.js';
 // Validar configuración. Si hay al menos algún error, mostrar los mensajes y salir con código de error 1.
 ConfigValidator.validateOrExit();
 
+const llamarFuncion = (fn, delay) => {
+    if (delay > 0) {
+        setTimeout(fn, delay);
+    } else {
+        fn();
+    }
+}
+
 const validateApplicationHeader = (req, res, next) => {
     const applicationHeaderValue = req.get('application');
 
@@ -45,22 +53,26 @@ async function main() {
 
     // Endpoint para enviar mensajes
     app.post('/send-message', validateApplicationHeader, (req, res) => {
-        const { titulo, texto, imagen, token } = req.body;
+        const { titulo, texto, imagen, token, delay } = req.body;
         console.log('send-message: ', JSON.stringify(req.body));
-        try {
-            fcmClient.enviarMensaje({ token, titulo, mensaje: texto, imagen })
-                .then(response => {
-                    console.log('Mensaje recibido de FCM:', response);
-                    res.status(200).send({ success: true, mensaje: 'Mensaje enviado a FCM' });
-                })
-                .catch(error => {
-                    console.error('Error al enviar el mensaje:', error);
-                    res.status(500).send('Error al enviar mensaje a FCM');
-                });
-        } catch (error) {
-            console.error('Error al intentar enviar un mensaje', error);
-            res.status(500).send('Error al enviar mensaje a FCM');
-        }
+
+        let _delay = parseInt(delay, 10) || 0;
+        llamarFuncion(() => {
+            try {
+                fcmClient.enviarMensaje({ token, titulo, mensaje: texto, imagen })
+                    .then(response => {
+                        console.log('Mensaje recibido de FCM:', response);
+                        res.status(200).send({ success: true, mensaje: 'Mensaje enviado a FCM' });
+                    })
+                    .catch(error => {
+                        console.error('Error al enviar el mensaje:', error);
+                        res.status(500).send('Error al enviar mensaje a FCM');
+                    });
+            } catch (error) {
+                console.error('Error al intentar enviar un mensaje', error);
+                res.status(500).send('Error al enviar mensaje a FCM');
+            }
+        }, _delay);
     });
 
 

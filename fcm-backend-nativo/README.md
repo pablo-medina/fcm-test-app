@@ -79,18 +79,20 @@ Envía el mensaje indicado a FCM.
     "token": "",
     "titulo": "",
     "texto": "",
-    "imagen": ""
+    "imagen": "",
+    "delay": 0
 }
 ```
 
 #### Descripción de atributos del Payload
 
-| Atributo | Tipo   | Descripción                                 |
-| -------- | ------ | ------------------------------------------- |
-| token    | string | Token FCM obtenido por el frontend          |
-| titulo   | string | Título del mensaje                          |
-| texto    | string | Contenido prinicpal del mensaje             |
-| imagen   | string | URL a una imagen para incluir en el mensaje |
+| Atributo | Tipo   | Descripción                                             | Valor por defecto |
+| -------- | ------ | ------------------------------------------------------- | ----------------- |
+| token    | string | Token FCM obtenido por el frontend                      | No definido       |
+| titulo   | string | Título del mensaje                                      | Vacío             |
+| texto    | string | Contenido prinicpal del mensaje                         | Vacío             |
+| imagen   | string | URL a una imagen para incluir en el mensaje             | No definido       |
+| delay    | number | Retraso (en milisegundos) para enviar el mensaje a FCM. | 0 (Inmediato)     |
 
 ## Scripts
 
