@@ -29,7 +29,8 @@ export class AppComponent implements OnDestroy {
     {
       titulo: new FormControl<string | null>('Título'),
       texto: new FormControl<string>('Mensaje de prueba', { validators: Validators.required }),
-      imagen: new FormControl<string | null>('https://picsum.photos/200')
+      imagen: new FormControl<string | null>('https://picsum.photos/200'),
+      delay: new FormControl<number | null>(0)
     }
   );
 
@@ -109,7 +110,8 @@ export class AppComponent implements OnDestroy {
         token: this.token,
         titulo: formValue.titulo || '',
         texto: formValue.texto || '',
-        imagen: formValue.imagen || ''
+        imagen: formValue.imagen || '',
+        delay: formValue.delay || undefined
       }
     ).subscribe(
       {
