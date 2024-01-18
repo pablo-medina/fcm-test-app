@@ -1,11 +1,35 @@
-import express, { json } from 'express';
+import express from 'express';
 import { readFileSync } from 'fs';
 import cors from 'cors';
 import FCMClient from './fcm-client.js';
+import chalk from 'chalk';
 
-const SERVICE_ACCOUNT_KEY_FILENAME = './serviceAccountKey.json';
 const FCM_API_PORT = process.env.FCM_API_PORT || 10001;
 const FCM_APP_ID = process.env.FCM_APP_ID || 'fcm-test-client';
+const CLIENT_CONFIG_FILENAME = 'firebase.config.json';
+const SERVICE_ACCOUNT_KEY_FILENAME = './serviceAccountKey.json';
+
+let clientConfigFile;
+
+const errors = [];
+
+try {
+    clientConfigFile = readFileSync(CLIENT_CONFIG_FILENAME);
+} catch (error) {
+    errors.push(`No se pudo abrir el archivo de configuración de API de Firebase (${chalk.yellowBright(CLIENT_CONFIG_FILENAME)}).`);
+}
+
+try {
+    clientConfigFile = readFileSync(SERVICE_ACCOUNT_KEY_FILENAME);
+} catch (error) {
+    errors.push(`No se pudo abrir el archivo de configuración de clave de Cuenta de Servicio de Firebase (${chalk.yellowBright(SERVICE_ACCOUNT_KEY_FILENAME)}).`);
+}
+
+if (errors.length > 0) {
+    errors.forEach(error => { console.error(chalk.redBright(error)) });
+    console.log(chalk.whiteBright('Verifique que los archivos estén incluidos tal como se describe en la documentación e intente nuevamente.'));
+    process.exit(1);
+}
 
 const validateApplicationHeader = (req, res, next) => {
     const applicationHeaderValue = req.get('application');
@@ -19,7 +43,7 @@ const validateApplicationHeader = (req, res, next) => {
 
 async function main() {
     console.log('Cargando configuración...');
-    const fcmClient = new FCMClient(SERVICE_ACCOUNT_KEY_FILENAME);    
+    const fcmClient = new FCMClient(SERVICE_ACCOUNT_KEY_FILENAME);
     await fcmClient.inicializar();
 
     console.log('Inicialiando servidor...');
@@ -32,7 +56,7 @@ async function main() {
     // Endpoint para obtener la configuración
     app.get('/firebase-config', validateApplicationHeader, (req, res) => {
         try {
-            const configFile = readFileSync('firebase.config.json');
+            const configFile = readFileSync(CLIENT_CONFIG_FILENAME);
             const config = JSON.parse(configFile);
             res.json(config);
         } catch (error) {
@@ -64,13 +88,14 @@ async function main() {
 
     // Iniciar el servidor
     app.listen(FCM_API_PORT, () => {
-        console.log(`Servidor FCM-TEST-APP corriendo en http://localhost:${FCM_API_PORT}`);
+        const address = `http://localhost:${FCM_API_PORT}`;
+        console.log(`${chalk.yellow("Servidor de notificaciones corriendo en")} ${chalk.greenBright(address)}`);
     });
 }
 
 main().then(
-    status => {
-        console.log('Servidor inicializado.', status);
+    () => {
+        console.log('Servidor inicializado.');
     }
 ).catch(err => {
     console.error(err);
