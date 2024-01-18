@@ -23,7 +23,7 @@ const getProxyAgent = () => {
         console.log('Configuración de proxy detectada.');
         return new HttpsProxyAgent(PROXY_URL);
     } else {
-        console.warn(`NOTA: No se va a usar configuración de proxy. En caso de necesitarla, setear la variable de entorno ${PROXY_ENV_VAR} con "http://<usuario>:<password>@<url_proxy>:<puerto_proxy>.`);
+        console.log('Configuración de proxy no detectada.');
         return undefined;
     }
 }
