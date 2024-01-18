@@ -91,6 +91,47 @@ export class MessagingService {
       );
   }
 
+  enviarMensajeTopic(mensaje: IMensaje): Observable<any> {
+    const sendMessageUrl = `${environment.apiUrl}/send-message-topic`;
+    const headers = new HttpHeaders(
+      {
+        'Content-Type': 'application/json',
+        'application': environment.appId
+      }
+    );
+
+    console.debug('enviarMensajeTopics:', mensaje);
+
+    console.log('URL', sendMessageUrl, 'body:', mensaje, 'headers:', headers);
+
+    return this.http.post(sendMessageUrl, mensaje, { headers })
+      .pipe(
+        tap(response => {
+          console.debug('Mensaje recibido:', response);
+        })
+      );
+  }
+
+  subscribeToTopic(topic:string, token:string, status:boolean){
+    const sendMessageUrl = `${environment.apiUrl}/subscribe-to-topic`;
+    const headers = new HttpHeaders(
+      {
+        'Content-Type': 'application/json',
+        'application': environment.appId
+      }      
+    );
+    const body = {
+      token,topic,status
+    }
+    console.log('EN SERVICE, TokenTopic', body)
+    return this.http.post(sendMessageUrl, body, { headers })
+    .pipe(
+      tap(response => {
+        console.debug('subscripcionTOPIC130:', response);
+      })
+    );
+  }
+
   public isServiceWorkerEnabled(): boolean {
     return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
   }

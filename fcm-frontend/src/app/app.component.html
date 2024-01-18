@@ -24,9 +24,38 @@
           <h5>URL Imagen:</h5>
           <input type="text" formControlName="imagen" />
         </li>
+        <li class="row">
+          <h5>URL Topic:</h5>
+          <input type="text" formControlName="topic" />
+        </li>
       </ul>
       <div class="buttons">
         <button type="submit">Enviar</button>
+      </div>
+    </form>
+    <br>
+    <h1>SUBSCRIPCIÓN A TOPICS</h1>
+    <form class="message-sender" [formGroup]="frmSubscribirATopic" (submit)="subscribeToTopic()">
+      <ul class="fields">
+        <li class="row">
+          <h5>Token1:</h5>
+          <input type="text" formControlName="token1" [value]="token"/>
+        </li>
+        <li class="row">
+          <h5>Status:</h5>
+          <input type="radio" id="true" formControlName="status" value="true" checked />
+          <label for="true">Subscripto</label>
+          <input type="radio" id="false" formControlName="status" value="false" checked />
+          <label for="false">Desubscripto</label>
+        </li>
+        <li class="row">
+          <h5>URL Topic:</h5>
+          <input type="text" formControlName="topic" value="true" checked />       
+        </li>
+        
+      </ul>
+      <div class="buttons">
+        <button type="submit">Subscribir</button>
       </div>
     </form>
   </ng-container>

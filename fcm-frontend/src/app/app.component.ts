@@ -24,12 +24,20 @@ export class AppComponent implements OnDestroy {
   notSupported = false;
 
   token: string = '';
-
+  messaging:any;
   frmEnviarMensaje = new FormGroup(
     {
       titulo: new FormControl<string | null>('Título'),
       texto: new FormControl<string>('Mensaje de prueba', { validators: Validators.required }),
-      imagen: new FormControl<string | null>('https://picsum.photos/200')
+      imagen: new FormControl<string | null>('https://picsum.photos/200'),
+      topic: new FormControl<string>('')
+    }
+  );
+  frmSubscribirATopic = new FormGroup(
+    {
+      token1: new FormControl<string | null>(this.token),
+      status: new FormControl<boolean>(true, { validators: Validators.required }),     
+      topic: new FormControl<string>('')
     }
   );
 
@@ -51,11 +59,11 @@ export class AppComponent implements OnDestroy {
 
                   console.debug('Service worker listo... Inicializando Firebase...');
                   const fapp = initializeApp(firebaseConfig);
-                  const messaging = getMessaging(fapp);
+                  this.messaging = getMessaging(fapp);
 
                   this.loading = false;
 
-                  onMessage(messaging, payload => {
+                  onMessage( this.messaging, payload => {
                     console.log('MENSAJE RECIBIDO:', payload);
                     this.showToast(payload);
                   })
@@ -65,7 +73,7 @@ export class AppComponent implements OnDestroy {
                     .then(swRegistration => {
                       console.log('Obteniendo token...');
                       //TODO: Agregar la vapidKey
-                      getToken(messaging, { serviceWorkerRegistration: swRegistration }).then(token => {
+                      getToken( this.messaging, { serviceWorkerRegistration: swRegistration }).then(token => {
                         console.log('El token es: ', token);
                         this.token = token;
                       });
@@ -103,7 +111,10 @@ export class AppComponent implements OnDestroy {
 
   enviarMensaje(): void {
     const formValue = this.frmEnviarMensaje.value;
-
+if(formValue.topic){
+  console.log('TIENE TOPIC');
+  return this.enviarMensajeTopic();
+}
     this.messagingService.enviarMensaje(
       {
         token: this.token,
@@ -121,6 +132,47 @@ export class AppComponent implements OnDestroy {
         }
       }
     )
+  }
+  enviarMensajeTopic(): void {
+    const formValue = this.frmEnviarMensaje.value;
+
+    this.messagingService.enviarMensajeTopic(
+      {
+        titulo: formValue.titulo || '',
+        texto: formValue.texto || '',
+        imagen: formValue.imagen || '',
+        topic: formValue.topic || ''
+      }
+    ).subscribe(
+      {
+        next: response => {
+          console.log('Respuesta:', response);
+        },
+        error: err => {
+          console.error(err);
+        }
+      }
+    )
+  }
+  subscribeToTopic() {
+    const topic = this.frmSubscribirATopic.value.topic || 'TODOS';
+    const token = this.frmSubscribirATopic.value.token1 || this.token;
+    const status = this.frmSubscribirATopic.value.status || true; 
+    this.messagingService.subscribeToTopic(topic, token, status)
+    .subscribe(
+      {next:(response:any) =>{
+        if(response.successCount >= 1 && response.errors.length == 0){
+          console.log(`${status? '':'DE'}SUBSCRIPCION EXITOSA`);
+        }else {
+          console.log(`${status? '':'DE'}SUBSCRIPCION FALLIDA:`, response);
+        }       
+      },
+      error: err => {
+        console.error(err);
+      }}
+    )
+    console.log(`${status? '':'DE'}SUBSCRIBIENDO A TOPIC`, topic, token, status)
+
   }
 
   ngOnDestroy(): void {
