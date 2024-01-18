@@ -3,6 +3,7 @@ import { environment } from '../../environments/environment';
 import { BehaviorSubject, interval, Observable, Subscription, of, tap, fromEvent } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { IMensaje } from '../models/mensaje.model';
+import { FirebaseConfig } from '../models/messaging.model';
 
 @Injectable({
   providedIn: 'root'
@@ -43,7 +44,7 @@ export class MessagingService {
     }
   }
 
-  getFirebaseConfig(): Observable<any> {
+  getFirebaseConfig(): Observable<FirebaseConfig> {
     if (this.config) {
       return of(this.config);
     } else {
@@ -55,7 +56,7 @@ export class MessagingService {
         }
       );
 
-      return this.http.get(configApiUrl, { headers })
+      return this.http.get<FirebaseConfig>(configApiUrl, { headers })
         .pipe(
           tap(firebaseConfig => {
             this.channel.addEventListener('message', (event) => {

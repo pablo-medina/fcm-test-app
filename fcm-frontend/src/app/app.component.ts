@@ -65,8 +65,11 @@ export class AppComponent implements OnDestroy {
                   navigator.serviceWorker.register('/firebase-messaging-sw.js')
                     .then(swRegistration => {
                       console.log('Obteniendo token...');
-                      //TODO: Agregar la vapidKey
-                      getToken(messaging, { serviceWorkerRegistration: swRegistration }).then(token => {
+                      
+                      getToken(messaging, {
+                        serviceWorkerRegistration: swRegistration,
+                        vapidKey: firebaseConfig.vapidKey
+                      }).then(token => {
                         console.log('El token es: ', token);
                         this.token = token;
                       });
