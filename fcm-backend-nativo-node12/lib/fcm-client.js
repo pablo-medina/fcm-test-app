@@ -10,7 +10,7 @@
  * 
  */
 const { GoogleAuth } = require('google-auth-library');
-const { HttpsProxyAgent } = require('https-proxy-agent');
+const HttpsProxyAgent = require('https-proxy-agent');
 const fetch = require('node-fetch');
 const { readFileSync } = require('fs');
 
