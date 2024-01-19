@@ -4,6 +4,9 @@
   "description": "Ejemplo de Backend para usar con Firebase Cloud Messasing y el cliente provisto",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server",
     "dev": "nodemon server"

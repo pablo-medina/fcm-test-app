@@ -44,9 +44,11 @@ async function main() {
         try {
             const configFile = readFileSync(ServerConfig.clientConfigPath);
             const vapidKeyFile = readFileSync(ServerConfig.vapidKeyPath);
-            const config = JSON.parse(configFile);
-            const vapidKey = JSON.parse(vapidKeyFile).vapidKey;
-            res.json(Object.assign(config, vapidKey));
+            const configJSON = JSON.parse(configFile);
+            const vapidKeyJSON = JSON.parse(vapidKeyFile);
+            const response = Object.assign(configJSON, vapidKeyJSON);
+            console.log('Configuración: ', response);
+            res.json(response);
         } catch (error) {
             console.error('Error al leer el archivo de configuración:', error);
             res.status(500).json({ error: 'Error interno del servidor' });
