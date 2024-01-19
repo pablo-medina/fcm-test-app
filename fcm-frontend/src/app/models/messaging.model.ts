@@ -7,3 +7,9 @@ export interface FirebaseConfig {
     appId: string
     vapidKey: string
 }
+
+export interface Notificacion {
+    titulo?: string
+    mensaje?: string
+    imagen?: string
+}

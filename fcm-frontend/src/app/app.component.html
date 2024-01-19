@@ -7,11 +7,7 @@
   </ng-container>
   <ng-container *ngIf="!loading">
     <form class="message-sender" [formGroup]="frmEnviarMensaje" (submit)="enviarMensaje()">
-      <ul class="fields">
-        <li class="row">
-          <h5>Token:</h5>
-          <div class="token">{{token}}</div>
-        </li>
+      <ul class="fields">        
         <li class="row">
           <h5>Título:</h5>
           <input type="text" formControlName="titulo" />
@@ -28,9 +24,14 @@
           <h5>Demorar envío: (milisegundos)</h5>
           <input type="number" formControlName="delay" />
         </li>
+        <ng-container *ngIf="!permitirNotificaciones">
+          <li class="row">
+            Debe habilitar las notificaciones desde el navegador para poder enviar mensajes.
+          </li>
+        </ng-container>
       </ul>
       <div class="buttons">
-        <button type="submit">Enviar</button>
+        <button type="submit" [disabled]="!permitirNotificaciones">Enviar</button>
       </div>
     </form>
   </ng-container>

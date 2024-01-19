@@ -14,20 +14,7 @@ import { FirebaseAppModule, getApp, initializeApp, provideFirebaseApp } from '@a
 let current_token = '';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes),
-  /*
-  importProvidersFrom(provideFirebaseApp(
-    () => initializeApp(),
-    () => getToken(getMessaging(initializeApp(firebaseConfig)), {vapidKey: ""})
-      .then(token => {
-        console.log('TOKEN:', token);
-        current_token = token; 
-      })
-  )),
-  importProvidersFrom(provideMessaging(
-    () => getMessaging()
-  )),
-  */
+  providers: [provideRouter(routes),  
 
   provideServiceWorker('ngsw-worker.js', {
     //enabled: !isDevMode(),

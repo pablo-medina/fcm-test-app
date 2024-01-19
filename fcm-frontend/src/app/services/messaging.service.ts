@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { BehaviorSubject, interval, Observable, Subscription, of, tap, fromEvent } from 'rxjs';
+import { BehaviorSubject, concatMap, from, map, Observable, of, tap, Subject } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { IMensaje } from '../models/mensaje.model';
-import { FirebaseConfig } from '../models/messaging.model';
+import { FirebaseConfig, Notificacion } from '../models/messaging.model';
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 @Injectable({
   providedIn: 'root'
@@ -11,37 +13,88 @@ import { FirebaseConfig } from '../models/messaging.model';
 export class MessagingService {
   private channel = new BroadcastChannel('app-channel');
   private config: any;
-  serviceWorkerReady$ = new BehaviorSubject<boolean>(false);
-
-  private intervalSubscription: Subscription | undefined;
+  private messagingServiceWorker: ServiceWorker | undefined;
+  private firebaseConfig!: FirebaseConfig;
+  private messageToken!: string;
+  private _serviceWorkerReady$ = new BehaviorSubject<boolean>(false);
+  private _notificacion$ = new Subject<Notificacion>();
 
   constructor(private http: HttpClient) {
+  }
+
+  public inicializar() {
     if (navigator.serviceWorker) {
-      this.startPolling();
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then(registration => {
+          console.log('ServiceWorkerRegistration:', registration, 'Scope:', registration.scope);
+
+          const worker = registration.active || registration.installing;
+          if (worker) {
+            if (worker.state === 'activated') {
+              console.log('El service worker de mensajería ya está activo.');
+
+              this.inicializarFCM(registration).subscribe({
+                next: config => {
+                  worker.postMessage({ action: 'firebase-config', value: config });
+                  this._serviceWorkerReady$.next(true);
+                }, error: err => { console.error(err); }
+              });
+            } else {
+              // Escuchar mensajes del Service Worker
+              navigator.serviceWorker.addEventListener('message', (event: any) => {
+                if (event.data && event.data.action === 'sw-active') {
+                  console.log('Service worker de mensajería instalado y activo.');
+
+                  this.inicializarFCM(registration).subscribe({
+                    next: config => {
+                      worker.postMessage({ action: 'firebase-config', value: config });
+                      this._serviceWorkerReady$.next(true);
+                    }, error: err => { console.error(err); }
+                  });
+                }
+              })
+            }
+          }
+        });
+    } else {
+      console.error('Service worker no encontrado. Los mensajes en segundo plano no van a funcionar.');
     }
   }
 
-  private startPolling() {
-    this.intervalSubscription = interval(1000).subscribe(() => {
-      console.debug('Consultando estado al service worker...');
-      this.channel.postMessage({ action: 'status_request' });
-    });
+  private inicializarFCM(registration: ServiceWorkerRegistration): Observable<FirebaseConfig> {
+    return this.getFirebaseConfig()
+      .pipe(
+        map(firebaseConfig => {
+          console.log('Config:', firebaseConfig);
+          const fapp = initializeApp(firebaseConfig);
+          const messaging = getMessaging(fapp);
+          return ({ firebaseConfig, messaging });
+        }),
+        concatMap(({ firebaseConfig, messaging }) => {
+          return from(getToken(messaging, {
+            vapidKey: firebaseConfig.vapidKey,
+            serviceWorkerRegistration: registration
+          })).pipe(map((token: string) => ({ firebaseConfig, messaging, token })))
+        }),
+        map(({ firebaseConfig, messaging, token }) => {
+          this.messageToken = token;
+          console.log('Token:', token);
 
-    this.channel.addEventListener('message', (event) => {
-      const data = event.data;
-      if (data.action === 'status' && data.ready === true) {
-        this.stopPolling();
-        console.log('Service Worker listo.');
-        this.serviceWorkerReady$.next(true);
-      }
-    })
-  }
+          onMessage(messaging, payload => {
+            console.log('[APP] Mensaje recibido:', payload);
+            this._notificacion$.next({
+              titulo: payload.notification?.title,
+              mensaje: payload.notification?.body,
+              imagen: payload.notification?.image
+            })
+          });
 
-  private stopPolling() {
-    if (this.intervalSubscription) {
-      this.intervalSubscription.unsubscribe();
-      this.intervalSubscription = undefined;
-    }
+          //console.debug('Service worker registrado:', sw);
+          //this.messagingServiceWorker = sw;
+          console.debug('Service worker de mensajería FCM registrado.');
+          return firebaseConfig;
+        })
+      )
   }
 
   getFirebaseConfig(): Observable<FirebaseConfig> {
@@ -80,20 +133,23 @@ export class MessagingService {
       }
     );
 
-    console.debug('enviarMensaje:', mensaje);
+    const mensajeCompleto = Object.assign(mensaje, { token: this.messageToken });
 
-    console.log('URL', sendMessageUrl, 'body:', mensaje, 'headers:', headers);
+    console.debug('enviarMensaje: URL', sendMessageUrl, 'body:', mensajeCompleto, 'headers:', headers);
 
-    return this.http.post(sendMessageUrl, mensaje, { headers })
-      .pipe(
-        tap(response => {
-          console.debug('Mensaje recibido:', response);
-        })
-      );
+    return this.http.post(sendMessageUrl, mensajeCompleto, { headers });
   }
 
   public isServiceWorkerEnabled(): boolean {
     return 'serviceWorker' in navigator && navigator.serviceWorker.controller !== null;
+  }
+
+  get notificacion$() {
+    return this._notificacion$.asObservable();
+  }
+
+  get ready$() {
+    return this._serviceWorkerReady$.asObservable();
   }
 
 }

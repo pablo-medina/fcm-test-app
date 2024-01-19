@@ -8,6 +8,7 @@ import { BehaviorSubject, Subject, takeUntil } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { SpinnerComponent } from './components/spinner/spinner.component';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Notificacion } from './models/messaging.model';
 
 @Component({
   selector: 'app-root',
@@ -23,72 +24,51 @@ export class AppComponent implements OnDestroy {
   loading = false;
   notSupported = false;
 
-  token: string = '';
+  permitirNotificaciones = false;
 
   frmEnviarMensaje = new FormGroup(
     {
       titulo: new FormControl<string | null>('Título'),
       texto: new FormControl<string>('Mensaje de prueba', { validators: Validators.required }),
       imagen: new FormControl<string | null>('https://picsum.photos/200'),
-      delay: new FormControl<number | null>(0)
+      delay: new FormControl<number | null>(2500)
     }
   );
 
   constructor(private messagingService: MessagingService, private toastr: ToastrService) {
-    messagingService.getFirebaseConfig()
-      .subscribe(
-        {
-          next: firebaseConfig => {
-            console.debug('Configuración de Firebase: [APP]', firebaseConfig);
-            this.loading = true;
-
-            messagingService.serviceWorkerReady$
-              .pipe(
-                takeUntil(this.ngDestroy$)
-              ).subscribe(ready => {
-                if (ready) {
-                  this.ngDestroy$.next();
-                  this.ngDestroy$.complete();
-
-                  console.debug('Service worker listo... Inicializando Firebase...');
-                  const fapp = initializeApp(firebaseConfig);
-                  const messaging = getMessaging(fapp);
-
-                  this.loading = false;
-
-                  onMessage(messaging, payload => {
-                    console.log('MENSAJE RECIBIDO:', payload);
-                    this.showToast(payload);
-                  })
-
-                  // NOTA: Necesito obtener el swRegistration y pasárselo al getToken para que no falle en el primer uso
-                  navigator.serviceWorker.register('/firebase-messaging-sw.js')
-                    .then(swRegistration => {
-                      console.log('Obteniendo token...');
-                      
-                      getToken(messaging, {
-                        serviceWorkerRegistration: swRegistration,
-                        vapidKey: firebaseConfig.vapidKey
-                      }).then(token => {
-                        console.log('El token es: ', token);
-                        this.token = token;
-                      });
-                    });
-                }
-              });
-
-          },
-          error: err => {
-            console.error('No se pudo obtener configuración de firebase:', err);
-          }
+    this.loading = true;
+    messagingService.ready$
+      .pipe(
+        takeUntil(this.ngDestroy$)
+      ).subscribe(ready => {
+        if (ready) {
+          this.loading = false;
+          console.debug('MessagingService: Service Worker listo.');
         }
-      );
+      });
+
+    messagingService.notificacion$
+      .pipe(
+        takeUntil(this.ngDestroy$)
+      ).subscribe(notificacion => {
+        this.showToast(notificacion);
+      });
+
+    Notification.requestPermission()
+      .then(permission => {
+        this.permitirNotificaciones = !!(permission === 'granted');
+        if (this.permitirNotificaciones) {
+          messagingService.inicializar();
+        } else {
+          this.loading = false;
+        }
+      });
   }
 
-  private showToast(payload: MessagePayload): void {
-    const title = payload.notification?.title;
-    const body = payload.notification?.body;
-    const imageUrl = payload.notification?.image;
+  private showToast(notificacion: Notificacion): void {
+    const title = notificacion.titulo;
+    const body = notificacion.mensaje;
+    const imageUrl = notificacion.imagen;
 
     if (imageUrl) {
       this.toastr.info(
@@ -106,11 +86,11 @@ export class AppComponent implements OnDestroy {
   }
 
   enviarMensaje(): void {
+    // Enviar mensaje
     const formValue = this.frmEnviarMensaje.value;
 
     this.messagingService.enviarMensaje(
       {
-        token: this.token,
         titulo: formValue.titulo || '',
         texto: formValue.texto || '',
         imagen: formValue.imagen || '',
@@ -125,7 +105,7 @@ export class AppComponent implements OnDestroy {
           console.error(err);
         }
       }
-    )
+    );
   }
 
   ngOnDestroy(): void {
