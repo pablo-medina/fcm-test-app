@@ -30,7 +30,7 @@ const validateApplicationHeader = (req, res, next) => {
 async function main() {
     console.log('Cargando configuración...');
     const fcmClient = new FCMClient(ServerConfig.serviceAccountKeyPath);
-    await fcmClient.inicializar();
+    await fcmClient.init();
 
     console.log('Inicialiando servidor...');
     const app = express();
@@ -63,18 +63,18 @@ async function main() {
         let _delay = parseInt(delay, 10) || 0;
         llamarFuncion(() => {
             try {
-                fcmClient.enviarMensaje({ token, titulo, mensaje: texto, imagen })
+                fcmClient.sendNotification({ token, title: titulo, body: texto, image: imagen })
                     .then(response => {
                         console.log('Mensaje recibido de FCM:', response);
                         res.status(200).send({ success: true, mensaje: 'Mensaje enviado a FCM' });
                     })
                     .catch(error => {
                         console.error('Error al enviar el mensaje:', error);
-                        res.status(500).send('Error al enviar mensaje a FCM');
+                        res.status(500).send({success: false, message: 'Error al enviar mensaje a FCM', detail: error.message});
                     });
             } catch (error) {
                 console.error('Error al intentar enviar un mensaje', error);
-                res.status(500).send('Error al enviar mensaje a FCM');
+                res.status(500).send({success: false, message: 'Error al enviar mensaje a FCM', detail: error.message});
             }
         }, _delay);
     });

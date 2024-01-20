@@ -41,13 +41,37 @@ class FCMClient {
         this._serviceAccountKey = JSON.parse(readFileSync(serviceAccountKeyPath));
     }
 
-    async inicializar() {
+    async init() {
         this._proxyAgent = getProxyAgent();
         // Precargar un token, no es necesario, pero evita el lazy load y ayuda a verificar errores al iniciar el servidor
         this._authToken = await this._getAccessToken();
     }
 
-    async enviarMensaje({ token, titulo, mensaje, imagen }) {
+    async sendNotification({ token, title, body, image }) {        
+        let response = await this._doNotificationRequest({ token, title, body, image });
+        let jsonResponse;        
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.warn('El servidor no autorizó la solicitud. Intentando nuevamente con nuevo token OAuth2...');
+                await this._renewAccessToken();
+                response = await this._doNotificationRequest({ token, title, body, image });
+                if (!response.ok) {
+                    throw new Error('El servidor volvió a rechazar la solicitud tras la renovación de token OAuth.');
+                }
+            } else {
+                console.error(response);
+                throw new Error('Se ha producido un error al intentar enviar el mensaje.');
+            }
+        }
+
+        // Respuesta OK
+        jsonResponse = await response.json();
+
+        return jsonResponse;
+    }
+
+    async _doNotificationRequest({ token, title, body, image }) {
         if (!this._serviceAccountKey) {
             throw new Error('Service Account Key no inicializada correctamente.');
         }
@@ -61,17 +85,18 @@ class FCMClient {
             message: {
                 "token": token,
                 "notification": {
-                    "title": titulo,
-                    "body": mensaje,
-                    "image": imagen
+                    title,
+                    body,
+                    image
                 }
             }
         };
 
         const payloadJSON = JSON.stringify(payload);
+        console.debug('Mensaje enviado a FCM:', payloadJSON);
 
-        // Envía la notificación mediante Axios
-        const response = await fetch(fcmEndpoint, {
+        // Envía la notificación mediante node-fetch
+        return fetch(fcmEndpoint, {
             method: 'POST',
             body: payloadJSON,
             headers: {
@@ -79,11 +104,6 @@ class FCMClient {
             },
             agent: this._proxyAgent
         });
-
-        console.debug('Mensaje enviado a FCM:', payloadJSON);
-        const data = await response.json();
-        console.debug('Respuesta:', data);
-        return data;
     }
 
     async _renewAccessToken() {
@@ -110,7 +130,7 @@ class FCMClient {
 
             this._accessToken = tokenInfo.token;
             this._tokenExpirationTime = tokenExpirationTime;
-            
+
             console.debug('Nuevo token obtenido. Válido hasta:', new Date(tokenExpirationTime));
 
             return this._accessToken;
