@@ -15,6 +15,7 @@ const fetch = require('node-fetch');
 const { readFileSync } = require('fs');
 
 const PROXY_ENV_VAR = 'HTTP_PROXY';
+const DEFAULT_TOKEN_EXPIRATION_SECONDS = 3600;
 
 const getProxyAgent = () => {
     // Inicializar proxy-agent en caso de ser necesario
@@ -32,7 +33,8 @@ class FCMClient {
     _serviceAccountKey = undefined;
     _serviceAccountKeyPath = undefined;
     _proxyAgent = undefined;
-    _authToken = undefined;
+    _accessToken = undefined;
+    _tokenExpirationTime = undefined;
 
     constructor(serviceAccountKeyPath) {
         this._serviceAccountKeyPath = serviceAccountKeyPath;
@@ -41,7 +43,8 @@ class FCMClient {
 
     async inicializar() {
         this._proxyAgent = getProxyAgent();
-        this._authToken = await this._getAuthToken();
+        // Precargar un token, no es necesario, pero evita el lazy load y ayuda a verificar errores al iniciar el servidor
+        this._authToken = await this._getAccessToken();
     }
 
     async enviarMensaje({ token, titulo, mensaje, imagen }) {
@@ -49,6 +52,9 @@ class FCMClient {
             throw new Error('Service Account Key no inicializada correctamente.');
         }
         const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${this._serviceAccountKey.project_id}/messages:send`;
+
+        // Obtener token OAuth2
+        const currentAccessToken = await this._getAccessToken();
 
         // Crea el mensaje de la notificación    
         const payload = {
@@ -62,21 +68,25 @@ class FCMClient {
             }
         };
 
+        const payloadJSON = JSON.stringify(payload);
+
         // Envía la notificación mediante Axios
         const response = await fetch(fcmEndpoint, {
             method: 'POST',
-            body: JSON.stringify(payload),
+            body: payloadJSON,
             headers: {
-                Authorization: `Bearer ${this._authToken}`
+                Authorization: `Bearer ${currentAccessToken}`
             },
             agent: this._proxyAgent
         });
+
+        console.debug('Mensaje enviado a FCM:', payloadJSON);
         const data = await response.json();
         console.debug('Respuesta:', data);
         return data;
     }
 
-    async _getAuthToken() {
+    async _renewAccessToken() {
         // Obtener autenticación OAuth2 para usar FCM
         const auth = new GoogleAuth({
             keyFile: this._serviceAccountKeyPath,
@@ -84,13 +94,41 @@ class FCMClient {
         });
 
         try {
-            // Obtiene el token de acceso
+            // Obtener token de acceso
             const client = await auth.getClient();
-            const token = await client.getAccessToken();
-            return token.token;
+            const tokenInfo = await client.getAccessToken();
+
+            let expires_in;
+            if (tokenInfo.res && tokenInfo.res.data && tokenInfo.res.data.expires_in) {
+                expires_in = tokenInfo.res.data.expires_in;
+            } else {
+                expires_in = DEFAULT_TOKEN_EXPIRATION_SECONDS;
+                console.warn(`El servidor OAuth no indicó la duración del token, se asume ${DEFAULT_TOKEN_EXPIRATION_SECONDS} segundos.`);
+            }
+
+            const tokenExpirationTime = Date.now() + (expires_in - 300) * 1000;
+
+            this._accessToken = tokenInfo.token;
+            this._tokenExpirationTime = tokenExpirationTime;
+            
+            console.debug('Nuevo token obtenido. Válido hasta:', new Date(tokenExpirationTime));
+
+            return this._accessToken;
         } catch (error) {
-            throw new Error('Error al autenticar:', error.message);
+            throw new Error('Error al realizar autenticación OAuth2');
         }
+    }
+
+    async _getAccessToken() {
+        // Si aún no tenemos token, o el mismo está vencido, solicitar un nuevo token
+        if (!this._accessToken || this._tokenExpirationTime < Date.now()) {
+            console.log('Solicitando token OAuth2...');
+            const renewedToken = await this._renewAccessToken();
+            return renewedToken;
+        }
+
+        // Si ya tenemos un token y no está vencido, devolver el token actual
+        return this._accessToken;
     }
 }
 
